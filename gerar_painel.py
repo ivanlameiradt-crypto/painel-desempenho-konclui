@@ -4,7 +4,7 @@ Robo da nuvem (GitHub Actions): faz login no Konclui, le o dashboard do mes vige
 e gera site/index.html (Painel de Desempenho da Equipe). Sem custo, sem o PC do Ivan.
 Credenciais vem dos secrets KONCLUI_EMAIL e KONCLUI_SENHA.
 """
-import os, re, sys, json, datetime, pathlib
+import os, re, sys, json, datetime, pathlib, traceback
 from playwright.sync_api import sync_playwright
 
 EMAIL = os.environ.get("KONCLUI_EMAIL")
@@ -57,23 +57,39 @@ def pct_do_total(texto, label):
     m = re.search(r"(\d{1,3})%\s*do total", texto[i+len(label):])
     return int(m.group(1)) if m else None
 
+def dump_erro(page, e):
+    try:
+        page.screenshot(path=str(DEBUG / "erro.png"), full_page=True)
+        (DEBUG / "erro.html").write_text(page.content(), encoding="utf-8")
+        (DEBUG / "erro.txt").write_text(f"{e}\nURL: {page.url}\n\n{traceback.format_exc()}", encoding="utf-8")
+    except Exception:
+        pass
+
 with sync_playwright() as p:
     browser = p.chromium.launch(headless=True)
     page = browser.new_page(viewport={"width": 1440, "height": 1000})
-    page.set_default_timeout(60000)
-    # ---- login ----
-    page.goto("https://app.konclui.com/login", wait_until="domcontentloaded")
-    page.fill("input[type=email]", EMAIL)
-    page.fill("input[type=password]", SENHA)
-    page.click("button:has-text('Entrar')")
-    page.wait_for_url(re.compile(r"https://app\.konclui\.com/(\?.*)?$"), timeout=60000)
-    # ---- dashboard do mes vigente ----
-    page.goto(f"https://app.konclui.com/?dateFrom={primeiro}", wait_until="domcontentloaded")
-    page.wait_for_selector("text=Ranking por usuários", timeout=60000)
-    page.wait_for_timeout(4000)  # deixa o ranking/KPIs renderizarem
-    texto = page.locator("main").inner_text()
-    (DEBUG / "pagina.txt").write_text(texto, encoding="utf-8")
-    page.screenshot(path=str(DEBUG / "dashboard.png"), full_page=True)
+    page.set_default_timeout(45000)
+    try:
+        # ---- login (SPA: esperar o conteúdo, não a navegação) ----
+        page.goto("https://app.konclui.com/login", wait_until="networkidle")
+        page.wait_for_selector("input[type=email]", timeout=45000)
+        page.fill("input[type=email]", EMAIL)
+        page.fill("input[type=password]", SENHA)
+        page.get_by_role("button", name=re.compile("entrar", re.I)).click()
+        # dashboard carregado = apareceu "checklists agendados"
+        page.wait_for_selector("text=checklists agendados", timeout=60000)
+        # ---- mês vigente ----
+        page.goto(f"https://app.konclui.com/?dateFrom={primeiro}", wait_until="networkidle")
+        page.wait_for_selector("text=Ranking por usuários", timeout=60000)
+        page.wait_for_timeout(4000)  # deixa o ranking/KPIs renderizarem
+        texto = page.locator("main").inner_text()
+        (DEBUG / "pagina.txt").write_text(texto, encoding="utf-8")
+        page.screenshot(path=str(DEBUG / "dashboard.png"), full_page=True)
+    except Exception as e:
+        dump_erro(page, e)
+        browser.close()
+        print(f"ERRO no login/leitura: {e} (ver debug/erro.png e debug/erro.html)", file=sys.stderr)
+        sys.exit(3)
     browser.close()
 
 colabs = [c for c in parse_ranking(texto, "Pontuação consolidada de cada integrante", "Ranking por unidades")
