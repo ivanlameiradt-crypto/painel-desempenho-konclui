@@ -1,0 +1,4 @@
+site/
+debug/
+__pycache__/
+*.pyc
