@@ -77,7 +77,14 @@ def pct_do_total(texto, label):
     return int(m.group(1)) if m else None
 
 # ---------------- montagem dos dados ----------------
-def montar_dados(texto, texto_ant, hoje):
+def montar_dados(texto, texto_ant, agora):
+    # agora pode ser datetime (produção, com hora) ou date (testes, só data)
+    if isinstance(agora, datetime.datetime):
+        hoje = agora.date()
+        gerado = agora.strftime("%d/%m/%Y às %H:%M") + " (Brasília)"
+    else:
+        hoje = agora
+        gerado = hoje.strftime("%d/%m/%Y")
     usuarios = [c for c in parse_ranking(texto, "Pontuação consolidada de cada integrante", "Ranking por unidades")
                 if c[0].strip().lower() not in EXCLUIR]
     unidades = parse_ranking(texto, "Desempenho entre as unidades", "Ranking por setores")
@@ -114,7 +121,7 @@ def montar_dados(texto, texto_ant, hoje):
     return {
         "mes_nome": MESES[hoje.month-1], "ano": hoje.year,
         "mes_anterior": MESES[prev_first.month-1], "tem_anterior": tem_anterior,
-        "ate": hoje.strftime("%d/%m"), "gerado": hoje.strftime("%d/%m/%Y"),
+        "ate": hoje.strftime("%d/%m"), "gerado": gerado,
         "total": total, "taxa": taxa, "score": score, "status": status_list,
         "usuarios": usuarios2, "unidades": unidades, "setores": setores, "snap": snap,
     }
@@ -386,7 +393,9 @@ def main():
         sys.exit(1)
     SITE.mkdir(exist_ok=True); DEBUG.mkdir(exist_ok=True)
 
-    hoje = datetime.date.today()
+    BRT = datetime.timezone(datetime.timedelta(hours=-3))
+    agora = datetime.datetime.now(BRT)
+    hoje = agora.date()
     primeiro = hoje.replace(day=1)
     prev_last = primeiro - datetime.timedelta(days=1)
     prev_first = prev_last.replace(day=1)
@@ -418,7 +427,7 @@ def main():
             print(f"AVISO: não li o mês anterior ({e2}); painel sai sem setas.", file=sys.stderr)
         browser.close()
 
-    dados = montar_dados(texto, texto_ant, hoje)
+    dados = montar_dados(texto, texto_ant, agora)
     if not dados["usuarios"] or dados["taxa"] is None:
         print("ERRO: não consegui ler o ranking/KPIs (ver debug/pagina.txt).", file=sys.stderr)
         sys.exit(2)
