@@ -230,7 +230,7 @@ TEMPLATE = r"""<!doctype html>
     <div id="evochart"></div>
   </div>
 
-  <div class="foot">Atualizado automaticamente na madrugada · fonte: Koncluí · última atualização: __GERADO__ · valores de prêmio ficam na planilha (confidencial)</div>
+  <div class="foot">Atualizado automaticamente de manhã cedo · fonte: Koncluí · última atualização: __GERADO__ · valores de prêmio ficam na planilha (confidencial)</div>
 </div>
 
 <script>

@@ -3,8 +3,8 @@ name: Atualizar Painel de Desempenho (Koncluí)
 on:
   schedule:
     # Minuto "quebrado" (não na hora cheia) reduz atraso/queda do agendador do GitHub.
-    - cron: '23 7 * * *'    # 07:23 UTC = 04:23 Brasília — madrugada, dia anterior já fechado
-    - cron: '23 10 * * *'   # 10:23 UTC = 07:23 Brasília — backup, caso o GitHub pule o da madrugada
+    - cron: '23 9 * * *'    # 09:23 UTC = 06:23 Brasília — manhã cedo, dia anterior já fechado
+    - cron: '23 10 * * *'   # 10:23 UTC = 07:23 Brasília — backup, caso o das 06:23 seja pulado
   workflow_dispatch:       # permite rodar manualmente para testar
 
 permissions:
