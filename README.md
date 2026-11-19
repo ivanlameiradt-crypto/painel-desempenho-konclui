@@ -14,3 +14,5 @@ sem depender do PC do Ivan.
 - `KONCLUI_SENHA` — senha do Koncluí
 
 > O painel reflete o **mês atual** (muda sozinho na virada do mês). Sem custo: Actions + Pages no plano free.
+
+<!-- 19/11/2026: envio de manutenção. Em repositório público o GitHub desliga o robô agendado após 60 dias sem atividade; próximo envio até ~15/01/2027. -->
